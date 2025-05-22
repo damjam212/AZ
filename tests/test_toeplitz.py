@@ -58,6 +58,6 @@ def test_toeplitz_non_power_of_two():
     y_fast = toeplitz_matvec(t_col, t_row, x)
     y_naive = naive_toeplitz_prod(t_col, t_row, x)
 
-    print(f'y_fast {y_fast}')
     print(f'y_naive {y_naive}')
+    print(f'y_fast {y_fast}')
     assert np.allclose(y_fast, y_naive, atol=1e-10)
