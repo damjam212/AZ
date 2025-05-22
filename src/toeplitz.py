@@ -3,7 +3,6 @@ from .fft import fft, ifft
 from .utils import pad_to_power_of_two
 
 
-    
 def toeplitz_matvec(t_col: np.ndarray, t_row: np.ndarray, x: np.ndarray) -> np.ndarray:
     """
         Mnoży macierz Toeplitza T (zdefiniowaną przez t_col i t_row) przez wektor x w O(n log n).
