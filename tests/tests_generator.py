@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 from scipy.linalg import toeplitz
 
@@ -63,16 +64,30 @@ def write_test_file(input_path, output_path, test_cases):
 def main():
     os.makedirs('data/input', exist_ok=True)
     os.makedirs('data/output', exist_ok=True)
+    os.makedirs('data/time', exist_ok=True)
 
     patterns = ['random', 'symmetric', 'unit', 'zero', 'increasing']
     sizes = [4, 8, 16]
 
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     for pattern in patterns:
         for n in sizes:
+            start_time = time.perf_counter()
             test_cases = [generate_test_case(n, pattern)]
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+
             input_filename = f'data/input/input_{pattern}_{n}.txt'
             output_filename = f'data/output/output_{pattern}_{n}.txt'
+            time_filename = f'data/time/time_{pattern}_{n}.txt'
+
             write_test_file(input_filename, output_filename, test_cases)
+
+            with open(time_filename, 'w') as f_time:
+                f_time.write(f"{elapsed_time:.6f} seconds\n")
+            print()
+            print(f"Generated file: input_{pattern}_{n}.txt | Size: {n} | Generation time: {elapsed_time:.6f} seconds")
+            print("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 if __name__ == '__main__':
     main()
