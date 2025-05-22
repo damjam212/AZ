@@ -35,9 +35,11 @@ def read_generation_time(filename):
     try:
         with open(filename, 'r') as f:
             line = f.readline()
+            
             time_str = line.strip().split()[0]
             return float(time_str)
     except FileNotFoundError:
+        print(f"NIE ZNALEZIONO PLIKU TIME  {filename}")
         return None
 
 GREEN = '\033[92m'
@@ -48,7 +50,7 @@ def compare_results(computed, expected, atol=1e-10):
 
     if len(computed) != len(expected):
         print(f"{RED}[NO]{RESET} Liczba przypadków testowych nie zgadza się.")
-        return NO
+        return False
 
     all_passed = True
     for i, (y_comp, y_exp) in enumerate(zip(computed, expected)):
@@ -56,7 +58,7 @@ def compare_results(computed, expected, atol=1e-10):
             print(f"{GREEN}[OK]{RESET} Test {i + 1} zakończony sukcesem.")
         else:
             print(f"{RED}[NO]{RESET} Test {i + 1} nie powiódł się.")
-            all_passed = NO
+            all_passed = False
     
     
     return all_passed

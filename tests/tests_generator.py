@@ -74,17 +74,45 @@ def main():
         for n in sizes:
             start_time = time.perf_counter()
             test_cases = [generate_test_case(n, pattern)]
-            end_time = time.perf_counter()
-            elapsed_time = end_time - start_time
-
+            
             input_filename = f'data/input/input_{pattern}_{n}.txt'
             output_filename = f'data/output/output_{pattern}_{n}.txt'
             time_filename = f'data/time/time_{pattern}_{n}.txt'
 
             write_test_file(input_filename, output_filename, test_cases)
 
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+            
             with open(time_filename, 'w') as f_time:
                 f_time.write(f"{elapsed_time:.6f} seconds\n")
+                
+            print()
+            print(f"Generated file: input_{pattern}_{n}.txt | Size: {n} | Generation time: {elapsed_time:.6f} seconds")
+            print("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+
+    patterns = ['random', 'symmetric', 'unit', 'zero', 'increasing']
+    sizes = [10000, 50000 ] #, 100000]
+    
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+    for pattern in patterns:
+        for n in sizes:
+            start_time = time.perf_counter()
+            test_cases = [generate_test_case(n, pattern)]
+            
+            input_filename = f'data/input/input_{pattern}_{n}.txt'
+            output_filename = f'data/output/output_{pattern}_{n}.txt'
+            time_filename = f'data/time/time_{pattern}_{n}.txt'
+
+            write_test_file(input_filename, output_filename, test_cases)
+
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+            
+            with open(time_filename, 'w') as f_time:
+                f_time.write(f"{elapsed_time:.6f} seconds\n")
+                
             print()
             print(f"Generated file: input_{pattern}_{n}.txt | Size: {n} | Generation time: {elapsed_time:.6f} seconds")
             print("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
