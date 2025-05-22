@@ -57,7 +57,7 @@ def write_test_file(input_path, output_path, test_cases):
             f_in.write(' '.join(map(str, t_col)) + '\n')
             f_in.write(' '.join(map(str, t_row)) + '\n')
             f_in.write(' '.join(map(str, x)) + '\n')
-            T = toeplitz(t_col, t_row)
+            T = toeplitz(t_row, t_col)
             y = T @ x
             f_out.write(' '.join(map(str, y)) + '\n')
 
@@ -67,7 +67,7 @@ def main():
     os.makedirs('data/time', exist_ok=True)
 
     patterns = ['random', 'symmetric', 'unit', 'zero', 'increasing']
-    sizes = [4, 8, 16]
+    sizes = [4, 8, 16, 64, 128]
 
     print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     for pattern in patterns:
