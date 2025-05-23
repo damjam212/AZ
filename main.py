@@ -2,7 +2,10 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import defaultdict
 from src.toeplitz import toeplitz_matvec
+
+# =========================== FUNKCJE POMOCNICZE ===========================
 
 def read_input_file(filename):
     with open(filename, 'r') as f:
@@ -23,6 +26,11 @@ def read_input_file(filename):
             cases.append((n, t_col, t_row, x))
         return cases
 
+def save_output_file(filename, results):
+    with open(filename, 'w') as f:
+        for y in results:
+            f.write(' '.join(f'{val:.12f}' for val in y) + '\n')
+
 def read_output_file(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -39,14 +47,13 @@ def read_generation_time(filename):
             time_str = line.strip().split()[0]
             return float(time_str)
     except FileNotFoundError:
-        print(f"NIE ZNALEZIONO PLIKU TIME  {filename}")
+        print(f"NIE ZNALEZIONO PLIKU TIME {filename}")
         return None
 
-GREEN = '\033[92m'
-RED = '\033[91m'
-RESET = '\033[0m'
-
 def compare_results(computed, expected, atol=1e-10):
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    RESET = '\033[0m'
     if len(computed) != len(expected):
         print(f"{RED}[NO]{RESET} Liczba przypadków testowych nie zgadza się.")
         return False
@@ -59,8 +66,8 @@ def compare_results(computed, expected, atol=1e-10):
             print(f"{RED}[NO]{RESET} Test {i + 1} nie powiódł się.")
             all_passed = False
     return all_passed
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from collections import defaultdict
 
 def plot_time_complexity(execution_data):
@@ -68,7 +75,6 @@ def plot_time_complexity(execution_data):
         print("Brak danych do wykresu.")
         return
 
-    # Grupowanie i uśrednianie
     grouped = defaultdict(list)
     for n, t in execution_data:
         grouped[n].append(t)
@@ -76,19 +82,21 @@ def plot_time_complexity(execution_data):
     ns = sorted(grouped.keys())
     avg_times = np.array([np.mean(grouped[n]) for n in ns])
 
-    # Teoretyczna złożoność: O(n log n)
+    # Surowe teoretyczne funkcje
     n_log_n = np.array(ns) * np.log2(ns)
-    n_log_n = n_log_n / n_log_n.max() * avg_times.max()  # przeskalowanie
-
-    # Teoretyczna złożoność: O(n)
     linear = np.array(ns)
-    linear = linear / linear.max() * avg_times.max()  # przeskalowanie
 
-    # Wykres
+    # Skalowanie do punktu początkowego
+    scale_n_log_n = avg_times[0] / n_log_n[0]
+    scale_linear = avg_times[0] / linear[0]
+
+    n_log_n_scaled = n_log_n * scale_n_log_n
+    linear_scaled = linear * scale_linear
+
     plt.figure(figsize=(10, 6))
     plt.plot(ns, avg_times, 'o-', label='Średni rzeczywisty czas wykonania')
-    plt.plot(ns, n_log_n, '--', label='Złożoność teoretyczna: O(n log n)')
-    plt.plot(ns, linear, ':', label='Złożoność liniowa(punkt odniesienia): O(n)')
+    plt.plot(ns, n_log_n_scaled, '--', label='Złożoność teoretyczna: O(n log n)')
+    plt.plot(ns, linear_scaled, ':', label='Złożoność liniowa: O(n)')
     plt.xlabel('Rozmiar wejścia n')
     plt.ylabel('Czas (s)')
     plt.title('Charakterystyka czasowa algorytmu toeplitz_matvec')
@@ -97,34 +105,70 @@ def plot_time_complexity(execution_data):
     plt.tight_layout()
     plt.show()
 
-def main():
+# ============================= MENU I OPCJE ==============================
+def option_one():
+    print("\n--- OPCJA 1: Wybór pliku z bieżącego katalogu i uruchomienie algorytmu ---\n")
+    txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
+    if not txt_files:
+        print("Brak plików .txt w bieżącym katalogu.")
+        return
+
+    for idx, fname in enumerate(txt_files):
+        print(f"[{idx + 1}] {fname}")
+
+    choice = input("Wybierz numer pliku do przetworzenia: ")
+    try:
+        selected = txt_files[int(choice) - 1]
+    except (ValueError, IndexError):
+        print("Nieprawidłowy wybór.")
+        return
+
+    print(f"\nWybrano plik: {selected}")
+    cases = read_input_file(selected)
+
+    results = []
+    for i, (n, t_col, t_row, x) in enumerate(cases):
+        y = toeplitz_matvec(t_col, t_row, x)
+        results.append(y)
+        print(f"\n=== Wynik dla przypadku {i + 1} (n = {n}) ===")
+        print(" ".join(f"{val:.12f}" for val in y))
+
+    output_filename = selected.replace('.txt', '_output.txt')
+    save_output_file(output_filename, results)
+    print(f"\nWyniki zapisano do pliku: {output_filename}\n")
+
+
+def option_two():
+    print("\n--- OPCJA 2: Testowanie z katalogów data/input, output, time ---\n")
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    RESET = '\033[0m'
+
     input_dir = 'data/input'
     output_dir = 'data/output'
     time_dir = 'data/time'
-    
+
     input_files = [f for f in os.listdir(input_dir) if f.endswith('.txt')]
     
     total_tests = 0
     total_passed = 0
     total_failed = 0
-    execution_data = []  # lista (n, czas)
+    execution_data = []
 
     for input_file in input_files:
         print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
         input_path = os.path.join(input_dir, input_file)
-        output_file = input_file.replace('input', 'output')
-        output_path = os.path.join(output_dir, output_file)
-        time_file = input_file.replace('input', 'time')
-        time_path = os.path.join(time_dir, time_file)
-        
+        output_path = os.path.join(output_dir, input_file.replace('input', 'output'))
+        time_path = os.path.join(time_dir, input_file.replace('input', 'time'))
+
         if not os.path.exists(output_path):
             print(f'Brak odpowiadającego pliku wyjściowego dla {input_file}')
             continue
-        
+
         cases = read_input_file(input_path)
         expected_results = read_output_file(output_path)
         generation_time = read_generation_time(time_path)
-        
+
         computed_results = []
         start_time = time.perf_counter()
 
@@ -137,7 +181,7 @@ def main():
 
         end_time = time.perf_counter()
         execution_time = end_time - start_time
-        
+
         print(f"\nTest pliku: {input_file}")
         if compare_results(computed_results, expected_results):
             print(f'Test {input_file} zakończony sukcesem.')
@@ -146,23 +190,65 @@ def main():
             print(f'Test {input_file} nie powiódł się.')
             total_failed += 1
         total_tests += 1
-        
+
         print(f"Czas wykonania toeplitz_matvec: {execution_time:.6f} sekund")
         if generation_time is not None:
             print(f"Czas generowania danych: {generation_time:.6f} sekund")
         else:
             print("Brak informacji o czasie generowania danych.")
-            
+
         print("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    
+
     print("\n==================== Podsumowanie testów ====================")
     print(f"Całkowita liczba testów: {total_tests}")
     print(f"Liczba testów zakończonych sukcesem: {total_passed}  {GREEN}[OK]{RESET}")
     print(f"Liczba testów zakończonych niepowodzeniem: {total_failed}  {RED}[NO]{RESET}")
     print("=============================================================")
 
-    # Rysuj wykres czasów
+    # plot_time_complexity(execution_data)
+def option_three():
+    print("\n--- OPCJA 3: Charakterystyka czasowa algorytmu ---\n")
+
+    sizes = [2**i for i in range(10, 22)]  # od 4 do 1_048_576
+    execution_data = []
+
+    for n in sizes:
+        t_col = np.random.randint(-10, 11, size=n)
+        t_row = np.concatenate(([t_col[0]], np.random.randint(-10, 11, size=n - 1)))
+        x = np.random.randint(-10, 11, size=n)
+
+        start = time.perf_counter()
+        _ = toeplitz_matvec(t_col, t_row, x)
+        end = time.perf_counter()
+        elapsed = end - start
+        execution_data.append((n, elapsed))
+        print(f"n = {n}, czas = {elapsed:.6f} s")
+
     plot_time_complexity(execution_data)
+
+# ============================== MAIN ====================================
+
+def main():
+    while True:
+        print("\n==================== MENU ====================")
+        print("1. Wczytaj plik .txt z katalogu bieżącego i uruchom algorytm")
+        print("2. Uruchom testy z katalogów data/")
+        print("3. Charakterystyka czasowa algorytmu")
+        print("0. Wyjście")
+        print("==============================================")
+        choice = input("Wybierz opcję: ")
+
+        if choice == '1':
+            option_one()
+        elif choice == '2':
+            option_two()
+        elif choice == '3':
+            option_three()
+        elif choice == '0':
+            print("Zamykam program.")
+            break
+        else:
+            print("Nieprawidłowy wybór. Spróbuj ponownie.")
 
 if __name__ == '__main__':
     main()
