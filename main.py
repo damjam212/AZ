@@ -79,24 +79,25 @@ def plot_time_complexity(execution_data):
     for n, t in execution_data:
         grouped[n].append(t)
 
-    ns = sorted(grouped.keys())
+    ns = np.array(sorted(grouped.keys()))
     avg_times = np.array([np.mean(grouped[n]) for n in ns])
 
-    # Surowe teoretyczne funkcje
-    n_log_n = np.array(ns) * np.log2(ns)
-    linear = np.array(ns)
+    # Funkcje teoretyczne
+    n_log_n = ns * np.log2(ns)
+    linear = ns
 
-    # Skalowanie do punktu początkowego
-    scale_n_log_n = avg_times[0] / n_log_n[0]
-    scale_linear = avg_times[0] / linear[0]
+    # Skalowanie: dopasowanie pierwszego punktu teoretycznych krzywych do avg_times
+    scale_nlogn = avg_times[1] / n_log_n[1]
+    scale_linear = avg_times[1] / linear[1]
 
-    n_log_n_scaled = n_log_n * scale_n_log_n
+    n_log_n_scaled = n_log_n * scale_nlogn
     linear_scaled = linear * scale_linear
 
+    # Wykres
     plt.figure(figsize=(10, 6))
-    plt.plot(ns, avg_times, 'o-', label='Średni rzeczywisty czas wykonania')
-    plt.plot(ns, n_log_n_scaled, '--', label='Złożoność teoretyczna: O(n log n)')
-    plt.plot(ns, linear_scaled, ':', label='Złożoność liniowa: O(n)')
+    plt.plot(ns, avg_times, 'o-', label='Średni czas wykonania')
+    plt.plot(ns, n_log_n_scaled, '--', label='O(n log n) – dopasowane do 1. punktu')
+    plt.plot(ns, linear_scaled, ':', label='O(n) – dopasowane do 1. punktu')
     plt.xlabel('Rozmiar wejścia n')
     plt.ylabel('Czas (s)')
     plt.title('Charakterystyka czasowa algorytmu toeplitz_matvec')
@@ -206,10 +207,14 @@ def option_two():
     print("=============================================================")
 
     # plot_time_complexity(execution_data)
+import numpy as np
+import time
+import math
+
 def option_three():
     print("\n--- OPCJA 3: Charakterystyka czasowa algorytmu ---\n")
 
-    sizes = [2**i for i in range(10, 22)]  # od 4 do 1_048_576
+    sizes = [2**i for i in range(0, 20)]  # od 1024 do 4_194_304 (2^10 do 2^21)
     execution_data = []
 
     for n in sizes:
@@ -223,6 +228,33 @@ def option_three():
         elapsed = end - start
         execution_data.append((n, elapsed))
         print(f"n = {n}, czas = {elapsed:.6f} s")
+
+    # Wyświetlanie tabeli z porównaniami
+    print("\nTabela porównawcza:")
+    print(f"{'n':>12} | {'czas (s)':>10} | {'ratio czasów':>12} | {'ratio n log n':>14}")
+    print("-" * 60)
+    for i in range(len(execution_data)):
+        n = execution_data[i][0]
+        czas = execution_data[i][1]
+
+        if i == 0:
+            ratio_czas = "-"
+            ratio_nlogn = "-"
+        else:
+            prev_n = execution_data[i-1][0]
+            prev_czas = execution_data[i-1][1]
+
+            ratio_czas = czas / prev_czas if prev_czas > 0 else float('inf')
+
+            nlogn = n * math.log2(n)
+            prev_nlogn = prev_n * math.log2(prev_n)
+            ratio_nlogn = nlogn / prev_nlogn if prev_nlogn > 0 else float('inf')
+
+        if isinstance(ratio_nlogn, str):
+            print(f"{n:12d} | {czas:10.6f} | {str(ratio_czas):>12} | {ratio_nlogn:>14}")
+        else:
+            print(f"{n:12d} | {czas:10.6f} | {ratio_czas:12.6f} | {ratio_nlogn:14.6f}")
+
 
     plot_time_complexity(execution_data)
 
