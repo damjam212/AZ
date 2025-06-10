@@ -1,7 +1,8 @@
 import os
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+import math
+# import matplotlib.pyplot as plt
 from collections import defaultdict
 from src.toeplitz import toeplitz_matvec
 
@@ -66,47 +67,45 @@ def compare_results(computed, expected, atol=1e-10):
             print(f"{RED}[NO]{RESET} Test {i + 1} nie powiódł się.")
             all_passed = False
     return all_passed
-import matplotlib.pyplot as plt
-import numpy as np
-from collections import defaultdict
 
-def plot_time_complexity(execution_data):
-    if not execution_data:
-        print("Brak danych do wykresu.")
+# Funkcja do generowania pliku wejściowego
+def generate_input_file(n, filename, min_val, max_val):
+    try:
+        n = int(n)
+        if n <= 0:
+            raise ValueError("Rozmiar n musi być dodatni.")
+    except ValueError:
+        print("Nieprawidłowy rozmiar n. Podaj liczbę całkowitą dodatnią.")
         return
 
-    grouped = defaultdict(list)
-    for n, t in execution_data:
-        grouped[n].append(t)
+    try:
+        min_val = int(min_val)
+        max_val = int(max_val)
+        if min_val > max_val:
+            raise ValueError("Dolna granica musi być mniejsza lub równa górnej granicy.")
+    except ValueError:
+        print("Nieprawidłowy zakres wartości. Podaj liczby całkowite, gdzie dolna granica <= górna granica.")
+        return
 
-    ns = np.array(sorted(grouped.keys()))
-    avg_times = np.array([np.mean(grouped[n]) for n in ns])
+    # Generowanie losowych danych
+    t_col = np.random.randint(min_val, max_val + 1, size=n).astype(float)
+    t_row = np.concatenate(([t_col[0]], np.random.randint(min_val, max_val + 1, size=n-1))).astype(float)
+    x = np.random.randint(min_val, max_val + 1, size=n).astype(float)
 
-    # Funkcje teoretyczne
-    n_log_n = ns * np.log2(ns)
-    linear = ns
+    # Zapisywanie do pliku
+    try:
+        with open(filename, 'w') as f:
+            f.write("1\n")  # Jedna instancja
+            f.write(f"{n}\n")
+            f.write(' '.join(f'{val:.12f}' for val in t_col) + '\n')
+            f.write(' '.join(f'{val:.12f}' for val in t_row) + '\n')
+            f.write(' '.join(f'{val:.12f}' for val in x) + '\n')
+        print(f"Plik wejściowy '{filename}' został wygenerowany pomyślnie.")
+    except Exception as e:
+        print(f"Błąd podczas zapisywania pliku: {e}")
 
-    # Skalowanie: dopasowanie pierwszego punktu teoretycznych krzywych do avg_times
-    scale_nlogn = avg_times[1] / n_log_n[1]
-    scale_linear = avg_times[1] / linear[1]
+# =========================== OPCJE MENU ===========================
 
-    n_log_n_scaled = n_log_n * scale_nlogn
-    linear_scaled = linear * scale_linear
-
-    # Wykres
-    plt.figure(figsize=(10, 6))
-    plt.plot(ns, avg_times, 'o-', label='Średni czas wykonania')
-    plt.plot(ns, n_log_n_scaled, '--', label='O(n log n) – dopasowane do 1. punktu')
-    plt.plot(ns, linear_scaled, ':', label='O(n) – dopasowane do 1. punktu')
-    plt.xlabel('Rozmiar wejścia n')
-    plt.ylabel('Czas (s)')
-    plt.title('Charakterystyka czasowa algorytmu toeplitz_matvec')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-# ============================= MENU I OPCJE ==============================
 def option_one():
     print("\n--- OPCJA 1: Wybór pliku z bieżącego katalogu i uruchomienie algorytmu ---\n")
     txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
@@ -137,7 +136,6 @@ def option_one():
     output_filename = selected.replace('.txt', '_output.txt')
     save_output_file(output_filename, results)
     print(f"\nWyniki zapisano do pliku: {output_filename}\n")
-
 
 def option_two():
     print("\n--- OPCJA 2: Testowanie z katalogów data/input, output, time ---\n")
@@ -206,15 +204,10 @@ def option_two():
     print(f"Liczba testów zakończonych niepowodzeniem: {total_failed}  {RED}[NO]{RESET}")
     print("=============================================================")
 
-    # plot_time_complexity(execution_data)
-import numpy as np
-import time
-import math
-
 def option_three():
     print("\n--- OPCJA 3: Charakterystyka czasowa algorytmu ---\n")
 
-    sizes = [2**i for i in range(0, 20)]  # od 1024 do 4_194_304 (2^10 do 2^21)
+    sizes = [2**i for i in range(10, 22)]  # od 1024 do 4_194_304
     execution_data = []
 
     for n in sizes:
@@ -255,8 +248,15 @@ def option_three():
         else:
             print(f"{n:12d} | {czas:10.6f} | {ratio_czas:12.6f} | {ratio_nlogn:14.6f}")
 
-
-    plot_time_complexity(execution_data)
+def option_four():
+    print("\n--- OPCJA 4: Generowanie pliku wejściowego ---\n")
+    n = input("Podaj rozmiar n: ")
+    min_val = input("Podaj dolną granicę zakresu wartości (całkowita): ")
+    max_val = input("Podaj górną granicę zakresu wartości (całkowita): ")
+    filename = input("Podaj nazwę pliku (np. test.txt): ")
+    if not filename.endswith('.txt'):
+        filename += '.txt'
+    generate_input_file(n, filename, min_val, max_val)
 
 # ============================== MAIN ====================================
 
@@ -266,6 +266,7 @@ def main():
         print("1. Wczytaj plik .txt z katalogu bieżącego i uruchom algorytm")
         print("2. Uruchom testy z katalogów data/")
         print("3. Charakterystyka czasowa algorytmu")
+        print("4. Wygeneruj plik wejściowy")
         print("0. Wyjście")
         print("==============================================")
         choice = input("Wybierz opcję: ")
@@ -276,6 +277,8 @@ def main():
             option_two()
         elif choice == '3':
             option_three()
+        elif choice == '4':
+            option_four()
         elif choice == '0':
             print("Zamykam program.")
             break
